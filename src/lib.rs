@@ -49,7 +49,7 @@ pub type QueryParams<'a> = Vec<QueryParam<'a>>;
 
 fn scheme(input: &str) -> IResult<&str, Scheme> {
     alt((tag_no_case("HTTP://"), tag_no_case("HTTPS://")))(input)
-        .and_then(|(next_input, res)| Ok((next_input, res.into())))
+        .map(|(next_input, res)| (next_input, res.into()))
 }
 
 fn authority(input: &str) -> IResult<&str, (&str, Option<&str>)> {
@@ -68,24 +68,24 @@ fn host(input: &str) -> IResult<&str, Host> {
         tuple((many1(terminated(alphanumerichyphen1, tag("."))), alpha1)),
         tuple((many_m_n(1, 1, alphanumerichyphen1), take(0 as usize))),
     ))(input)
-    .and_then(|(next_input, mut res)| {
+    .map(|(next_input, mut res)| {
         println!("res: {:?}", res);
         if !res.1.is_empty() {
             res.0.push(res.1);
         }
-        Ok((next_input, Host::HOST(res.0.join("."))))
+        (next_input, Host::HOST(res.0.join(".")))
     })
 }
 
 fn ip(input: &str) -> IResult<&str, Host> {
-    tuple((count(terminated(ip_num, tag(".")), 3), ip_num))(input).and_then(|(next_input, res)| {
+    tuple((count(terminated(ip_num, tag(".")), 3), ip_num))(input).map(|(next_input, res)| {
         let mut result: [u8; 4] = [0, 0, 0, 0];
         res.0
             .into_iter()
             .enumerate()
             .for_each(|(i, v)| result[i] = v);
         result[3] = res.1;
-        Ok((next_input, Host::IP(result)))
+        (next_input, Host::IP(result))
     })
 }
 
@@ -111,13 +111,13 @@ fn path(input: &str) -> IResult<&str, Vec<&str>> {
         many0(terminated(url_code_points, tag("/"))),
         opt(url_code_points),
     ))(input)
-    .and_then(|(next_input, res)| {
+    .map(|(next_input, res)| {
         println!("res: {:?}", res);
         let mut path: Vec<&str> = res.1.iter().map(|p| p.to_owned()).collect();
         if let Some(last) = res.2 {
             path.push(last);
         }
-        Ok((next_input, path))
+        (next_input, path)
     })
 }
 
@@ -134,21 +134,18 @@ fn query_params(input: &str) -> IResult<&str, QueryParams> {
             url_code_points,
         ))),
     ))(input)
-    .and_then(|(next_input, res)| {
+    .map(|(next_input, res)| {
         let mut qps = Vec::new();
-
         qps.push((res.1, res.3));
-
         for qp in res.4 {
             qps.push((qp.1, qp.3));
         }
-
-        Ok((next_input, qps))
+        (next_input, qps)
     })
 }
 
 fn fragment(input: &str) -> IResult<&str, &str> {
-    tuple((tag("#"), url_code_points))(input).and_then(|(next_input, res)| Ok((next_input, res.1)))
+    tuple((tag("#"), url_code_points))(input).map(|(next_input, res)| (next_input, res.1))
 }
 
 pub fn uri(input: &str) -> IResult<&str, URI> {
@@ -161,9 +158,9 @@ pub fn uri(input: &str) -> IResult<&str, URI> {
         opt(query_params),
         opt(fragment),
     ))(input)
-    .and_then(|(next_input, res)| {
+    .map(|(next_input, res)| {
         let (scheme, authority, host, port, path, query, fragment) = res;
-        Ok((
+        (
             next_input,
             URI {
                 scheme,
@@ -174,7 +171,7 @@ pub fn uri(input: &str) -> IResult<&str, URI> {
                 query,
                 fragment,
             },
-        ))
+        )
     })
 }
 
@@ -210,7 +207,7 @@ where
 fn n_to_m_digits<'a>(n: usize, m: usize) -> impl FnMut(&'a str) -> IResult<&'a str, String> {
     move |input| {
         many_m_n(n, m, one_of("0123456789"))(input)
-            .and_then(|(next_input, result)| Ok((next_input, result.into_iter().collect())))
+            .map(|(next_input, result)| (next_input, result.into_iter().collect()))
     }
 }
 
