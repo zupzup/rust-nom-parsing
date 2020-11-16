@@ -59,8 +59,8 @@ fn authority(input: &str) -> IResult<&str, (&str, Option<&str>)> {
     )(input)
 }
 
-fn host_or_ip(input: &str) -> IResult<&str, Host> {
-    alt((host, ip))(input)
+fn ip_or_host(input: &str) -> IResult<&str, Host> {
+    alt((ip, host))(input)
 }
 
 fn host(input: &str) -> IResult<&str, Host> {
@@ -152,7 +152,7 @@ pub fn uri(input: &str) -> IResult<&str, URI> {
     tuple((
         scheme,
         opt(authority),
-        host_or_ip,
+        ip_or_host,
         opt(port),
         opt(path),
         opt(query_params),
@@ -376,6 +376,22 @@ fn test_uri() {
                 path: Some(vec!["about"]),
                 query: Some(vec![("someVal", "5")]),
                 fragment: Some("anchor")
+            }
+        ))
+    );
+
+    assert_eq!(
+        uri("http://user:pw@127.0.0.1:8080"),
+        Ok((
+            "",
+            URI {
+                scheme: Scheme::HTTP,
+                authority: Some(("user", Some("pw"))),
+                host: Host::IP([127, 0, 0, 1]),
+                port: Some(8080),
+                path: None,
+                query: None,
+                fragment: None
             }
         ))
     );
