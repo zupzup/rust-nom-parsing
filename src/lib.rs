@@ -28,6 +28,17 @@ pub enum Scheme {
     HTTPS,
 }
 
+pub type Authority<'a> = (&'a str, Option<&'a str>);
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Host {
+    HOST(String),
+    IP([u8; 4]),
+}
+
+pub type QueryParam<'a> = (&'a str, &'a str);
+pub type QueryParams<'a> = Vec<QueryParam<'a>>;
+
 impl From<&str> for Scheme {
     fn from(i: &str) -> Self {
         match i.to_lowercase().as_str() {
@@ -37,16 +48,6 @@ impl From<&str> for Scheme {
         }
     }
 }
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Host {
-    HOST(String),
-    IP([u8; 4]),
-}
-
-pub type Authority<'a> = (&'a str, Option<&'a str>);
-pub type QueryParam<'a> = (&'a str, &'a str);
-pub type QueryParams<'a> = Vec<QueryParam<'a>>;
 
 fn scheme(input: &str) -> Res<&str, Scheme> {
     context(
@@ -79,7 +80,6 @@ fn host(input: &str) -> Res<&str, Host> {
         )),
     )(input)
     .map(|(next_input, mut res)| {
-        println!("res: {:?}", res);
         if !res.1.is_empty() {
             res.0.push(res.1);
         }
@@ -131,7 +131,6 @@ fn path(input: &str) -> Res<&str, Vec<&str>> {
         )),
     )(input)
     .map(|(next_input, res)| {
-        println!("res: {:?}", res);
         let mut path: Vec<&str> = res.1.iter().map(|p| p.to_owned()).collect();
         if let Some(last) = res.2 {
             path.push(last);
