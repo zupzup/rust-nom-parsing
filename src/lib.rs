@@ -464,6 +464,22 @@ mod tests {
         );
 
         assert_eq!(
+            uri("http://localhost"),
+            Ok((
+                "",
+                URI {
+                    scheme: Scheme::HTTP,
+                    authority: None,
+                    host: Host::HOST("localhost".to_string()),
+                    port: None,
+                    path: None,
+                    query: None,
+                    fragment: None
+                }
+            ))
+        );
+
+        assert_eq!(
             uri("https://www.zupzup.org:443/about/?someVal=5#anchor"),
             Ok((
                 "",
